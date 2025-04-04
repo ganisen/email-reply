@@ -6,6 +6,7 @@
 const express = require('express');
 require('dotenv').config();
 const emailRoutes = require('./routes/emailRoutes');
+const respondRoutes = require('./routes/respondRoutes');
 
 // Initialize express app
 const app = express();
@@ -16,6 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/emails', emailRoutes);
+app.use('/respond', respondRoutes);
 
 // Root route
 app.get('/', (req, res) => {

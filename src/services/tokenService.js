@@ -98,6 +98,72 @@ const generateAndSaveToken = async (emailData, options = {}) => {
   }
 };
 
+/**
+ * getTokenData - Retrieves email metadata associated with a token
+ * 
+ * @param {string} token - The token to look up
+ * @returns {Promise<Object|null>} The email metadata if found, null otherwise
+ * @throws {Error} If database operations fail
+ */
+const getTokenData = async (token) => {
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const query = `
+      SELECT id, token, sender_email, recipient_email, subject, content, 
+             created_at, expires_at, is_active
+      FROM email_metadata
+      WHERE token = $1 AND expires_at > NOW() AND is_active = true
+    `;
+    
+    const result = await db.query(query, [token]);
+    
+    if (result.rows.length === 0) {
+      return null;
+    }
+    
+    return result.rows[0];
+  } catch (error) {
+    console.error('Token lookup failed:', error);
+    throw new Error(`Failed to retrieve token data: ${error.message}`);
+  }
+};
+
+/**
+ * logResponse - Logs a response action for a token
+ * 
+ * @param {string} token - The token being used
+ * @param {string} actionType - The type of action (accept/decline)
+ * @param {Object} requestInfo - Additional request information
+ * @returns {Promise<Object>} The logged response data
+ * @throws {Error} If database operations fail
+ */
+const logResponse = async (token, actionType, requestInfo = {}) => {
+  const { ipAddress, userAgent } = requestInfo;
+  
+  try {
+    const query = `
+      INSERT INTO response_logs
+        (token, action_type, ip_address, user_agent)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id, token, action_type, response_time
+    `;
+    
+    const values = [token, actionType, ipAddress, userAgent];
+    const result = await db.query(query, values);
+    
+    return result.rows[0];
+  } catch (error) {
+    console.error('Response logging failed:', error);
+    // This is non-critical, so we'll just log the error but not throw
+    return null;
+  }
+};
+
 module.exports = {
-  generateAndSaveToken
+  generateAndSaveToken,
+  getTokenData,
+  logResponse
 }; 
