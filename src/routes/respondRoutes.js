@@ -46,6 +46,29 @@ router.get('/', async (req, res) => {
       return res.status(400).send('Invalid action specified.');
     }
     
+    // Format the created_at date for the quote
+    const createdDate = new Date(tokenData.created_at);
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    const dayOfWeek = days[createdDate.getDay()];
+    const month = months[createdDate.getMonth()];
+    const day = String(createdDate.getDate()).padStart(2, '0');
+    const year = createdDate.getFullYear();
+    
+    let hours = createdDate.getHours();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // Convert 0 to 12
+    const minutes = String(createdDate.getMinutes()).padStart(2, '0');
+    const timestamp = `${hours}:${minutes} ${ampm}`;
+    
+    // Create the quote with the formatted date
+    const quote = `\n- - - - - - -\nOn ${dayOfWeek}, ${month} ${day}, ${year} at ${timestamp} Natural Gaz (naturalgazdc@gmail.com) wrote:\n    "${tokenData.content.replace(/\n/g, '\n    ')}"`;
+    
+    // Add the quote to the response body
+    body += quote;
+    
     // Create mailto link with prefilled subject and body
     const mailtoUrl = `mailto:${tokenData.sender_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     
